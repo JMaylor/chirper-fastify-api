@@ -1,7 +1,5 @@
 "use strict";
 
-const { chirpSchema } = require("./schema");
-
 module.exports = async function (fastify, opts) {
   fastify.route({
     method: "GET",
@@ -14,15 +12,28 @@ module.exports = async function (fastify, opts) {
           type: "array",
           items: {
             type: "object",
-            // required: ["chirp_id", "author_email", "body", "hashtags"],
+            required: [
+              "chirp_id",
+              "created_at",
+              "body",
+              "hashtags",
+              "user_name",
+              "handle",
+              "picture",
+              "liked",
+              "rechirped",
+            ],
             properties: {
               chirp_id: { type: "number", description: "Unique identifier" },
+              created_at: { type: "number" },
               body: { type: "string", description: "Chirp content" },
               user_name: { type: "string" },
               handle: { type: "string" },
               picture: { type: "string" },
               liked: { type: "boolean" },
               rechirped: { type: "boolean" },
+              likes: { type: "number" },
+              rechirps: { type: "number" },
             },
           },
         },
@@ -30,14 +41,174 @@ module.exports = async function (fastify, opts) {
     },
     preValidation: fastify.authenticate,
     handler: async (req, reply) => {
-      // console.log(fastify.jwt.verify());
       const email = req.user["https://chirper.api/email"];
+
+      const client = await fastify.pg.connect();
+      const { rows } = await client.query(`SELECT * FROM chirp_details($1);`, [
+        email,
+      ]);
+      client.release();
+
+      reply.send(rows);
+    },
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/liked",
+    schema: {
+      tags: ["Chirps"],
+      description: "Get all liked chirps",
+      response: {
+        200: {
+          type: "array",
+          items: {
+            type: "object",
+            required: [
+              "chirp_id",
+              "created_at",
+              "body",
+              "hashtags",
+              "user_name",
+              "handle",
+              "picture",
+              "liked",
+              "rechirped",
+            ],
+            properties: {
+              chirp_id: { type: "number", description: "Unique identifier" },
+              created_at: { type: "number" },
+              body: { type: "string", description: "Chirp content" },
+              user_name: { type: "string" },
+              handle: { type: "string" },
+              picture: { type: "string" },
+              liked: { type: "boolean" },
+              rechirped: { type: "boolean" },
+              likes: { type: "number" },
+              rechirps: { type: "number" },
+            },
+          },
+        },
+      },
+    },
+    preValidation: fastify.authenticate,
+    handler: async (req, reply) => {
+      const email = req.user["https://chirper.api/email"];
+
+      const client = await fastify.pg.connect();
+      const { rows } = await client.query(`SELECT * FROM liked_chirps($1);`, [
+        email,
+      ]);
+      client.release();
+
+      reply.send(rows);
+    },
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/hashtag/:hashtag",
+    schema: {
+      tags: ["Chirps"],
+      description: "Get all chirps referencing this hashtag",
+      response: {
+        200: {
+          type: "array",
+          items: {
+            type: "object",
+            required: [
+              "chirp_id",
+              "created_at",
+              "body",
+              "hashtags",
+              "user_name",
+              "handle",
+              "picture",
+              "liked",
+              "rechirped",
+            ],
+            properties: {
+              chirp_id: { type: "number", description: "Unique identifier" },
+              created_at: { type: "number" },
+              body: { type: "string", description: "Chirp content" },
+              user_name: { type: "string" },
+              handle: { type: "string" },
+              picture: { type: "string" },
+              liked: { type: "boolean" },
+              rechirped: { type: "boolean" },
+              likes: { type: "number" },
+              rechirps: { type: "number" },
+            },
+          },
+        },
+      },
+    },
+    preValidation: fastify.authenticate,
+    handler: async (req, reply) => {
+      const email = req.user["https://chirper.api/email"];
+      const hashtag = req.params.hashtag;
+
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
-        "SELECT * FROM chirp JOIN user_account ON chirp.author_email = user_account.email LEFT JOIN chirpstat ON chirpstat.user_email = $1 AND chirpstat.chirp = chirp.chirp_id;",
-        [email]
+        `SELECT * FROM hashtag_chirps($1, $2);`,
+        [email, hashtag]
       );
       client.release();
+
+      reply.send(rows);
+    },
+  });
+
+  fastify.route({
+    method: "GET",
+    url: "/user/:handle",
+    schema: {
+      tags: ["Chirps"],
+      description: "Get all chirps by this user by handle",
+      response: {
+        200: {
+          type: "array",
+          items: {
+            type: "object",
+            required: [
+              "chirp_id",
+              "created_at",
+              "body",
+              "hashtags",
+              "user_name",
+              "handle",
+              "picture",
+              "liked",
+              "rechirped",
+            ],
+            properties: {
+              chirp_id: { type: "number", description: "Unique identifier" },
+              created_at: { type: "number" },
+              body: { type: "string", description: "Chirp content" },
+              user_name: { type: "string" },
+              handle: { type: "string" },
+              picture: { type: "string" },
+              liked: { type: "boolean" },
+              rechirped: { type: "boolean" },
+              likes: { type: "number" },
+              rechirps: { type: "number" },
+            },
+          },
+        },
+      },
+    },
+    preValidation: fastify.authenticate,
+    handler: async (req, reply) => {
+      const email = req.user["https://chirper.api/email"];
+      const handle = req.params.handle;
+
+      const client = await fastify.pg.connect();
+      const { rows } = await client.query(
+        `SELECT * FROM user_chirps($1, $2);`,
+        [email, handle]
+      );
+      client.release();
+
       reply.send(rows);
     },
   });
@@ -56,7 +227,19 @@ module.exports = async function (fastify, opts) {
         },
       },
       response: {
-        201: chirpSchema,
+        201: {
+          type: "object",
+          required: ["chirp_id"],
+          properties: {
+            chirp_id: { type: "number", description: "Unique identifier" },
+            author_email: { type: "string", description: "User email" },
+            body: { type: "string", description: "Chirp content" },
+            hashtags: {
+              type: "array",
+              items: { type: "string", description: "Hashtag IDs" },
+            },
+          },
+        },
       },
     },
     preValidation: fastify.authenticate,
@@ -89,7 +272,9 @@ module.exports = async function (fastify, opts) {
       const {
         rows: [chirp],
       } = await client.query(
-        "INSERT INTO chirp(author_email, body, hashtags) VALUES ($1, $2, $3) RETURNING chirp_id, author_email, body, hashtags;",
+        `INSERT INTO chirp(author_email, body, hashtags) 
+        VALUES ($1, $2, $3)
+        RETURNING chirp_id, author_email, body, hashtags;`,
         [email, body, hashtags]
       );
 

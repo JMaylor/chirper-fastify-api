@@ -1,7 +1,5 @@
 "use strict";
 
-const { userSchema } = require("./schema");
-
 module.exports = async function (fastify, opts) {
   fastify.route({
     method: "GET",
@@ -12,7 +10,23 @@ module.exports = async function (fastify, opts) {
       response: {
         200: {
           type: "array",
-          items: userSchema,
+          items: {
+            type: "object",
+            required: ["user_id", "user_name", "handle", "picture"],
+            properties: {
+              user_id: { type: "number", description: "Unique identifier" },
+              user_name: { type: "string", description: "User's display name" },
+              handle: {
+                type: "string",
+                description: "User's @handle for mentions",
+              },
+              picture: {
+                type: "string",
+                format: "uri",
+                description: "URL of user's picture",
+              },
+            },
+          },
         },
       },
     },
@@ -27,6 +41,48 @@ module.exports = async function (fastify, opts) {
   });
 
   fastify.route({
+    method: "GET",
+    url: "/me",
+    schema: {
+      tags: ["Users"],
+      description: "Get profile of logged in user",
+      response: {
+        200: {
+          type: "object",
+          required: ["user_id", "user_name", "handle", "picture"],
+          properties: {
+            user_id: { type: "number", description: "Unique identifier" },
+            user_name: { type: "string", description: "User's display name" },
+            handle: {
+              type: "string",
+              description: "User's @handle for mentions",
+            },
+            picture: {
+              type: "string",
+              format: "uri",
+              description: "URL of user's picture",
+            },
+          },
+        },
+      },
+    },
+    preValidation: fastify.authenticate,
+    handler: async (req, reply) => {
+      const email = req.user["https://chirper.api/email"];
+      const client = await fastify.pg.connect();
+      const {
+        rows: [user],
+      } = await client.query(
+        "SELECT user_id, user_name, handle, picture FROM user_account WHERE user_account.email = $1;",
+        [email]
+      );
+      client.release();
+      if (user) reply.send(user);
+      else reply.status(404).send();
+    },
+  });
+
+  fastify.route({
     method: "POST",
     url: "/",
     schema: {
@@ -35,10 +91,38 @@ module.exports = async function (fastify, opts) {
       body: {
         type: "object",
         required: ["user_name", "handle", "picture"],
-        properties: userSchema.properties,
+        properties: {
+          user_id: { type: "number", description: "Unique identifier" },
+          user_name: { type: "string", description: "User's display name" },
+          handle: {
+            type: "string",
+            description: "User's @handle for mentions",
+          },
+          picture: {
+            type: "string",
+            format: "uri",
+            description: "URL of user's picture",
+          },
+        },
       },
       response: {
-        201: userSchema,
+        201: {
+          type: "object",
+          required: ["user_id", "user_name", "handle", "picture"],
+          properties: {
+            user_id: { type: "number", description: "Unique identifier" },
+            user_name: { type: "string", description: "User's display name" },
+            handle: {
+              type: "string",
+              description: "User's @handle for mentions",
+            },
+            picture: {
+              type: "string",
+              format: "uri",
+              description: "URL of user's picture",
+            },
+          },
+        },
       },
     },
     preValidation: fastify.authenticate,
@@ -69,10 +153,38 @@ module.exports = async function (fastify, opts) {
       body: {
         type: "object",
         required: ["user_name", "picture"],
-        properties: userSchema.properties,
+        properties: {
+          user_id: { type: "number", description: "Unique identifier" },
+          user_name: { type: "string", description: "User's display name" },
+          handle: {
+            type: "string",
+            description: "User's @handle for mentions",
+          },
+          picture: {
+            type: "string",
+            format: "uri",
+            description: "URL of user's picture",
+          },
+        },
       },
       response: {
-        200: userSchema,
+        200: {
+          type: "object",
+          required: ["user_id", "user_name", "handle", "picture"],
+          properties: {
+            user_id: { type: "number", description: "Unique identifier" },
+            user_name: { type: "string", description: "User's display name" },
+            handle: {
+              type: "string",
+              description: "User's @handle for mentions",
+            },
+            picture: {
+              type: "string",
+              format: "uri",
+              description: "URL of user's picture",
+            },
+          },
+        },
       },
     },
     preValidation: fastify.authenticate,

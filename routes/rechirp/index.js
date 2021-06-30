@@ -5,19 +5,19 @@ module.exports = async function (fastify, opts) {
     method: "POST",
     url: "/",
     schema: {
-      tags: ["Likes"],
-      description: "Like/dislike a chirp",
+      tags: ["Rechirps"],
+      description: "Rechirp/remove rechirp a chirp",
       body: {
         type: "object",
-        required: ["chirp", "liked"],
+        required: ["chirp", "rechirped"],
         properties: {
           chirp: {
             type: "number",
-            description: "ID of the chirp to be liked/disliked",
+            description: "ID of the chirp to be rechirped",
           },
-          liked: {
+          rechirped: {
             type: "boolean",
-            description: "new like value (true/false)",
+            description: "new rechirp value (true/false)",
           },
         },
       },
@@ -32,12 +32,12 @@ module.exports = async function (fastify, opts) {
     handler: async (req, reply) => {
       const email = req.user["https://chirper.api/email"];
       const client = await fastify.pg.connect();
-      const { chirp, liked } = req.body;
+      const { chirp, rechirped } = req.body;
 
-      // create the like
+      // create the rechirp
       await client.query(
-        "INSERT INTO chirpstat(user_email, chirp, liked) VALUES ($1, $2, $3) ON CONFLICT ON CONSTRAINT chirpstat_user_email_chirp_key DO UPDATE SET liked = $3;",
-        [email, chirp, liked]
+        "INSERT INTO chirpstat(user_email, chirp, rechirped) VALUES ($1, $2, $3) ON CONFLICT ON CONSTRAINT chirpstat_user_email_chirp_key DO UPDATE SET rechirped = $3;",
+        [email, chirp, rechirped]
       );
 
       client.release();
