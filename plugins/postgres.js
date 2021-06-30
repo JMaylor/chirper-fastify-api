@@ -7,6 +7,6 @@ const fp = require("fastify-plugin");
  */
 module.exports = fp(async function (fastify, opts) {
   fastify.register(require("fastify-postgres"), {
-    connectionString: process.env.POSTGRES_URI,
+    connectionString: process.env.DATABASE_URL,
   });
 });
