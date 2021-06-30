@@ -22,7 +22,6 @@ module.exports = async function (fastify, opts) {
     },
     handler: async (req, reply) => {
       const { query } = req.params;
-      console.log(req.params);
 
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
