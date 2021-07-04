@@ -22,6 +22,7 @@ module.exports = async function (fastify, opts) {
               "picture",
               "liked",
               "rechirped",
+              "comments",
             ],
             properties: {
               chirp_id: { type: "number", description: "Unique identifier" },
@@ -34,6 +35,7 @@ module.exports = async function (fastify, opts) {
               rechirped: { type: "boolean" },
               likes: { type: "number" },
               rechirps: { type: "number" },
+              comments: { type: "number" },
             },
           },
         },
@@ -74,6 +76,7 @@ module.exports = async function (fastify, opts) {
               "picture",
               "liked",
               "rechirped",
+              "comments",
             ],
             properties: {
               chirp_id: { type: "number", description: "Unique identifier" },
@@ -86,6 +89,7 @@ module.exports = async function (fastify, opts) {
               rechirped: { type: "boolean" },
               likes: { type: "number" },
               rechirps: { type: "number" },
+              comments: { type: "number" },
             },
           },
         },
@@ -126,6 +130,7 @@ module.exports = async function (fastify, opts) {
               "picture",
               "liked",
               "rechirped",
+              "comments",
             ],
             properties: {
               chirp_id: { type: "number", description: "Unique identifier" },
@@ -138,6 +143,7 @@ module.exports = async function (fastify, opts) {
               rechirped: { type: "boolean" },
               likes: { type: "number" },
               rechirps: { type: "number" },
+              comments: { type: "number" },
             },
           },
         },
@@ -180,6 +186,7 @@ module.exports = async function (fastify, opts) {
               "picture",
               "liked",
               "rechirped",
+              "comments",
             ],
             properties: {
               chirp_id: { type: "number", description: "Unique identifier" },
@@ -192,6 +199,7 @@ module.exports = async function (fastify, opts) {
               rechirped: { type: "boolean" },
               likes: { type: "number" },
               rechirps: { type: "number" },
+              comments: { type: "number" },
             },
           },
         },
