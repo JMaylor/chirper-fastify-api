@@ -51,8 +51,26 @@ CREATE TABLE chirp (
 		ON DELETE CASCADE
 );
 
-CREATE TRIGGER set_timestamp
+CREATE TRIGGER set_chirp_timestamp
 BEFORE UPDATE ON chirp
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_timestamp();
+
+CREATE TABLE chirp_comment (
+	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	comment_id INT GENERATED ALWAYS AS IDENTITY,
+	author_email TEXT NOT NULL,
+	chirp INT NOT NULL,
+	body varchar(140) NOT NULL,
+	PRIMARY KEY(comment_id),
+	CONSTRAINT fk_chirp
+		FOREIGN KEY(chirp) 
+		REFERENCES chirp(chirp_id)
+		ON DELETE CASCADE
+);
+
+CREATE TRIGGER set_comment_timestamp
+BEFORE UPDATE ON chirp_comment
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
@@ -75,7 +93,20 @@ CREATE TABLE chirpstat (
 );
 
 CREATE OR REPLACE FUNCTION chirp_details(email text)
-	RETURNS TABLE (chirp_id int, body text, created_at TIMESTAMPTZ, hashtags text[], user_name text, handle text, picture text, liked BOOLEAN, rechirped BOOLEAN, likes int, rechirps int)
+	RETURNS TABLE (
+		chirp_id int,
+		body text,
+		created_at TIMESTAMPTZ,
+		hashtags text[],
+		user_name text,
+		handle text,
+		picture text,
+		liked BOOLEAN,
+		rechirped BOOLEAN,
+		likes int,
+		rechirps
+		int,
+		comments int)
 AS
 $body$
 	SELECT chirp_id,
@@ -88,68 +119,9 @@ $body$
 	liked,
 	rechirped,
 (SELECT COUNT(nullif(chirpstat.liked, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS likes,
-(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps
+(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps,
+(SELECT COUNT(*) FROM chirp_comment WHERE chirp_comment.chirp = chirp.chirp_id) AS comments
 FROM chirp JOIN user_account ON chirp.author_email = user_account.email 
 		LEFT JOIN chirpstat u ON u.user_email = $1 AND u.chirp = chirp.chirp_id;
-$body$
-language sql;
-
-CREATE OR REPLACE FUNCTION liked_chirps(email text)
-	RETURNS TABLE (chirp_id int, body text, created_at TIMESTAMPTZ, hashtags text[], user_name text, handle text, picture text, liked BOOLEAN, rechirped BOOLEAN, likes int, rechirps int)
-AS
-$body$
-	SELECT chirp_id,
-	body,
-	created_at,
-	hashtags,
-	user_name,
-	handle,
-	picture,
-	liked,
-	rechirped,
-(SELECT COUNT(nullif(chirpstat.liked, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS likes,
-(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps
-FROM chirp JOIN user_account ON chirp.author_email = user_account.email 
-		LEFT JOIN chirpstat u ON u.user_email = $1 AND u.chirp = chirp.chirp_id WHERE liked = True;
-$body$
-language sql;
-
-CREATE OR REPLACE FUNCTION hashtag_chirps(email text, hashtag text)
-	RETURNS TABLE (chirp_id int, body text, created_at TIMESTAMPTZ, hashtags text[], user_name text, handle text, picture text, liked BOOLEAN, rechirped BOOLEAN, likes int, rechirps int)
-AS
-$body$
-	SELECT chirp_id,
-	body,
-	created_at,
-	hashtags,
-	user_name,
-	handle,
-	picture,
-	liked,
-	rechirped,
-(SELECT COUNT(nullif(chirpstat.liked, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS likes,
-(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps
-FROM chirp JOIN user_account ON chirp.author_email = user_account.email 
-		LEFT JOIN chirpstat u ON u.user_email = $1 AND u.chirp = chirp.chirp_id WHERE $2 = ANY(hashtags);
-$body$
-language sql;
-
-CREATE OR REPLACE FUNCTION user_chirps(email text, handle text)
-	RETURNS TABLE (chirp_id int, body text, created_at TIMESTAMPTZ, hashtags text[], user_name text, handle text, picture text, liked BOOLEAN, rechirped BOOLEAN, likes int, rechirps int)
-AS
-$body$
-	SELECT chirp_id,
-	body,
-	created_at,
-	hashtags,
-	user_name,
-	handle,
-	picture,
-	liked,
-	rechirped,
-(SELECT COUNT(nullif(chirpstat.liked, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS likes,
-(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps
-FROM chirp JOIN user_account ON chirp.author_email = user_account.email 
-		LEFT JOIN chirpstat u ON u.user_email = $1 AND u.chirp = chirp.chirp_id WHERE handle = $2;
 $body$
 language sql;
