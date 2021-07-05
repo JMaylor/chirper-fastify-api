@@ -46,9 +46,10 @@ module.exports = async function (fastify, opts) {
       const email = req.user["https://chirper.api/email"];
 
       const client = await fastify.pg.connect();
-      const { rows } = await client.query(`SELECT * FROM chirp_details($1);`, [
-        email,
-      ]);
+      const { rows } = await client.query(
+        `SELECT * FROM chirp_details($1) ORDER BY created_at DESC;`,
+        [email]
+      );
       client.release();
 
       reply.send(rows);
@@ -101,7 +102,7 @@ module.exports = async function (fastify, opts) {
 
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
-        `SELECT * FROM chirp_details($1) WHERE liked = True;`,
+        `SELECT * FROM chirp_details($1) WHERE liked = True ORDER BY created_at DESC;`,
         [email]
       );
       client.release();
@@ -157,7 +158,7 @@ module.exports = async function (fastify, opts) {
 
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
-        `SELECT * FROM chirp_details($1) WHERE $2 = ANY(hashtags);`,
+        `SELECT * FROM chirp_details($1) WHERE $2 = ANY(hashtags) ORDER BY created_at DESC;`,
         [email, hashtag]
       );
       client.release();
@@ -213,7 +214,7 @@ module.exports = async function (fastify, opts) {
 
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
-        `SELECT * FROM chirp_details($1) WHERE handle = $2;`,
+        `SELECT * FROM chirp_details($1) WHERE handle = $2 ORDER BY created_at DESC;`,
         [email, handle]
       );
       client.release();
