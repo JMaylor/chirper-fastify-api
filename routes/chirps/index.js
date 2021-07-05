@@ -209,13 +209,14 @@ module.exports = async function (fastify, opts) {
     },
     preValidation: fastify.authenticate,
     handler: async (req, reply) => {
-      const email = req.user["https://chirper.api/email"];
       const handle = req.params.handle;
+      const email = req.user["https://chirper.api/email"];
 
       const client = await fastify.pg.connect();
       const { rows } = await client.query(
-        `SELECT * FROM chirp_details($1) WHERE handle = $2 ORDER BY created_at DESC;`,
-        [email, handle]
+        `SELECT * FROM user_chirp_details_with_rechirps($1, $2) 
+        ORDER BY created_at DESC;`,
+        [handle, email]
       );
       client.release();
 
