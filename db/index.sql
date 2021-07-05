@@ -125,3 +125,43 @@ FROM chirp JOIN user_account ON chirp.author_email = user_account.email
 		LEFT JOIN chirpstat u ON u.user_email = $1 AND u.chirp = chirp.chirp_id;
 $body$
 language sql;
+
+CREATE OR REPLACE FUNCTION user_chirp_details_with_rechirps(handle text, email text)
+	RETURNS TABLE (
+		chirp_id int,
+		body text,
+		created_at TIMESTAMPTZ,
+		hashtags text[],
+		user_name text,
+		handle text,
+		picture text,
+		liked BOOLEAN,
+		rechirped BOOLEAN,
+		likes int,
+		rechirps
+		int,
+		comments int)
+AS
+$body$
+	WITH user_email_address
+		AS (
+		SELECT email FROM user_account where handle = $1)
+	SELECT 
+	chirp_id,
+	body,
+	created_at,
+	hashtags,
+	user_name,
+	handle,
+	picture,
+	u.liked,
+	u.rechirped,
+(SELECT COUNT(nullif(chirpstat.liked, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS likes,
+(SELECT COUNT(nullif(chirpstat.rechirped, false)) FROM chirpstat WHERE chirpstat.chirp = chirp.chirp_id) AS rechirps,
+(SELECT COUNT(*) FROM chirp_comment WHERE chirp_comment.chirp = chirp.chirp_id) AS comments
+FROM chirp JOIN user_account ON chirp.author_email = user_account.email 
+		LEFT JOIN chirpstat u ON u.user_email = $2 AND u.chirp = chirp.chirp_id
+		LEFT JOIN chirpstat v ON v.user_email IN (SELECT email FROM user_email_address) AND v.chirp = chirp.chirp_id
+ 		WHERE handle = $1 OR v.rechirped = True;
+$body$
+language sql;
